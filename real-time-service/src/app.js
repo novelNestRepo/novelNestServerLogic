@@ -5,6 +5,7 @@ const cors = require("cors");
 const { Server } = require("socket.io");
 const Redis = require("ioredis");
 const jwt = require("jsonwebtoken");
+const channelRoutes = require("./routes/channelRoutes").default;
 
 // Initialize Express app
 const app = express();
@@ -248,6 +249,9 @@ app.get("/api/channels/:id", async (req, res) => {
     activeUsers,
   });
 });
+
+// Add channel routes
+app.use("/api/channels", channelRoutes);
 
 // Start server
 require("dotenv").config();
