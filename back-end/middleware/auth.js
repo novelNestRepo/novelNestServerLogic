@@ -1,30 +1,32 @@
-const UserModel = require("../models/user.model");
+const jwt = require("jsonwebtoken");
+const supabase = require("../config/supabase");
 
-const authMiddleware = async (req, res, next) => {
+const authenticateToken = async (req, res, next) => {
   try {
-    // Get token from the Authorization header
-    const authHeader = req.headers.authorization;
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!token) {
       return res.status(401).json({ error: "No token provided" });
     }
 
-    // Get current user
-    const { data, error } = await UserModel.getCurrentUser();
+    // Verify the token with Supabase
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
 
-    if (error || !data.user) {
-      return res.status(401).json({ error: "Not authenticated" });
+    if (error || !user) {
+      return res.status(403).json({ error: "Invalid token" });
     }
 
-    // Set user in request object
-    req.user = data.user;
+    // Add user info to request
+    req.user = user;
     next();
-  } catch (err) {
-    console.error(err.message || err);
-    return res
-      .status(500)
-      .json({ error: "Server error during authentication" });
+  } catch (error) {
+    console.error("Error authenticating token:", error);
+    res.status(500).json({ error: "Error authenticating token" });
   }
 };
 
-module.exports = authMiddleware;
+module.exports = { authenticateToken };

@@ -1,20 +1,42 @@
 const { createClient } = require("@supabase/supabase-js");
+require("dotenv").config();
 
-const supabaseUrl =
-  process.env.SUPABASE_URL || "https://rjjdutprvrlrtmjtesfg.supabase.co";
-const supabaseKey =
-  process.env.SUPABASE_ANON_KEY ||
+// Hardcoded credentials (temporary solution)
+const SUPABASE_URL = "https://rjjdutprvrlrtmjtesfg.supabase.co";
+const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqamR1dHBydnJscnRtanRlc2ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI1Mjg4MTMsImV4cCI6MjA1ODEwNDgxM30.yIu03W0BVWisiVF0FhqEC1Kl6U3gKNusUin6DBMu3TU";
+const SUPABASE_SERVICE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqamR1dHBydnJscnRtanRlc2ZnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MjUyODgxMywiZXhwIjoyMDU4MTA0ODEzfQ.sTUC5dKobOkOf3LENtqnCg5op-0DtVb6isJkXPL1FlY";
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error("Supabase URL and Key must be provided");
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_KEY) {
+  throw new Error("Missing Supabase environment variables");
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey, {
+// Initialize Supabase client with better error handling
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
+    autoRefreshToken: false,
+    persistSession: false,
+    detectSessionInUrl: false,
+    storage: {
+      getItem: (key) => null,
+      setItem: (key, value) => {},
+      removeItem: (key) => {},
+    },
+  },
+});
+
+// Initialize admin client for privileged operations
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+    detectSessionInUrl: false,
+    storage: {
+      getItem: (key) => null,
+      setItem: (key, value) => {},
+      removeItem: (key) => {},
+    },
   },
 });
 
@@ -30,4 +52,4 @@ supabase
     }
   });
 
-module.exports = supabase;
+module.exports = { supabase, supabaseAdmin };
