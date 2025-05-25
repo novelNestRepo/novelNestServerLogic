@@ -3,26 +3,40 @@ const UserModel = require("./../models/user.model");
 exports.register = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log("Registration attempt:", { email });
 
     if (!email || !password) {
+      console.log("Missing email or password");
       return res.status(400).json({ error: "Email and password are required" });
     }
 
     const { data, error } = await UserModel.createUser(email, password);
+    console.log("Supabase response:", { data, error });
 
     if (error) {
+      console.error("Registration error:", error);
       return res
         .status(400)
         .json({ error: error.message || "Registration failed" });
     }
 
-    // Return user info and session
+    if (!data || !data.user) {
+      console.error("No user data returned");
+      return res.status(400).json({ error: "Failed to create user" });
+    }
+
+    // Return user info and session in the expected format
     return res.status(201).json({
-      user: data.user,
-      session: data.session,
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+      },
+      session: {
+        access_token: data.session?.access_token,
+      },
     });
   } catch (err) {
-    console.error(err.message ? err.message : err);
+    console.error("Server error during registration:", err);
     return res.status(500).json({ error: "Server error during registration" });
   }
 };
@@ -43,10 +57,15 @@ exports.login = async (req, res) => {
         .json({ error: error.message || "Invalid credentials" });
     }
 
-    // Return user info and session
+    // Return user info and session in the expected format
     return res.status(200).json({
-      user: data.user,
-      session: data.session,
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+      },
+      session: {
+        access_token: data.session.access_token,
+      },
     });
   } catch (err) {
     console.error(err.message || err);
@@ -83,7 +102,12 @@ exports.getUser = async (req, res) => {
       return res.status(401).json({ error: "User not authenticated" });
     }
 
-    return res.status(200).json({ user: data.user });
+    return res.status(200).json({
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+      },
+    });
   } catch (err) {
     console.error(err.message || err);
     return res.status(500).json({ error: "Server error retrieving user" });
