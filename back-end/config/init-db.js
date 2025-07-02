@@ -1,11 +1,11 @@
-const supabase = require("./supabase");
+const { supabaseAdmin } = require("./supabase");
 
 async function initializeDatabase() {
   try {
     console.log("Initializing database...");
 
     // Create tables
-    const { error: messagesError } = await supabase.rpc(
+    const { error: messagesError } = await supabaseAdmin.rpc(
       "create_messages_table"
     );
     if (messagesError) {
@@ -13,7 +13,7 @@ async function initializeDatabase() {
       return;
     }
 
-    const { error: channelsError } = await supabase.rpc(
+    const { error: channelsError } = await supabaseAdmin.rpc(
       "create_channels_table"
     );
     if (channelsError) {
@@ -21,7 +21,7 @@ async function initializeDatabase() {
       return;
     }
 
-    const { error: relationshipsError } = await supabase.rpc(
+    const { error: relationshipsError } = await supabaseAdmin.rpc(
       "create_user_relationships_table"
     );
     if (relationshipsError) {
@@ -33,7 +33,7 @@ async function initializeDatabase() {
     }
 
     // Check if general channel exists
-    const { data: generalChannel, error: generalError } = await supabase
+    const { data: generalChannel, error: generalError } = await supabaseAdmin
       .from("channels")
       .select("*")
       .eq("name", "General")
@@ -46,7 +46,7 @@ async function initializeDatabase() {
 
     // Create general channel if it doesn't exist
     if (!generalChannel) {
-      const { error: createError } = await supabase.from("channels").insert([
+      const { error: createError } = await supabaseAdmin.from("channels").insert([
         {
           name: "General",
           description: "General discussion channel",
