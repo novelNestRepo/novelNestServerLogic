@@ -4,6 +4,13 @@
   "description": "Backend for NovelNest application",
   "main": "index.js",
   "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "supertest": "^6.3.0"
+  },
+  "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
