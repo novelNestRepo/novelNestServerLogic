@@ -15,9 +15,8 @@ const { createServer } = require("http");
 const { Server } = require("socket.io");
 const setupMessageHandlers = require("./socket/messageHandler");
 const environment = require("./config/environment")
-// Hardcoded credentials (temporary solution)
-const SUPABASE_URL = environment.SUPABASE_URL || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqamR1dHBydnJscnRtanRlc2ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI1Mjg4MTMsImV4cCI6MjA1ODEwNDgxM30.yIu03W0BVWisiVF0FhqEC1Kl6U3gKNusUin6DBMu3TU"; 
-const SUPABASE_SERVICE_KEY =environment.SUPABASE_SERVICE_KEY || "https://rjjdutprvrlrtmjtesfg.supabase.co";
+const SUPABASE_URL = environment.SUPABASE_URL 
+const SUPABASE_SERVICE_KEY =environment.SUPABASE_SERVICE_KEY 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
