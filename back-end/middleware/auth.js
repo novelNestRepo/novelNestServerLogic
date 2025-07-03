@@ -29,4 +29,14 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticateToken };
+// Middleware to require admin role
+const requireAdmin = (req, res, next) => {
+  // Supabase user metadata is usually in req.user.user_metadata
+  const role = req.user?.user_metadata?.role;
+  if (role === "admin") {
+    return next();
+  }
+  return res.status(403).json({ error: "Admin access required" });
+};
+
+module.exports = { authenticateToken, requireAdmin };

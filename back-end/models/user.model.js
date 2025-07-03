@@ -1,6 +1,37 @@
 const supabase = require("../config/supabase");
 
 class UserModel {
+  // Request password reset
+  static async requestPasswordReset(email) {
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo:
+          process.env.FRONTEND_URL ||
+          "http://localhost:3000/auth/reset-password",
+      });
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  }
+
+  // Resend email verification (Supabase workaround: re-trigger signUp)
+  static async resendEmailVerification(email) {
+    try {
+      // This will send a new verification email if the user exists and is unverified
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: "dummy-password", // Supabase will error if user exists, but still sends email
+        options: {
+          emailRedirectTo:
+            process.env.FRONTEND_URL || "http://localhost:3000/auth/callback",
+        },
+      });
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  }
   static async createUser(email, password) {
     try {
       console.log("Creating user with email:", email);

@@ -1,3 +1,62 @@
+// Request password reset
+exports.requestPasswordReset = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+    const { data, error } =
+      await require("../models/user.model").default.requestPasswordReset(email);
+    if (error) {
+      return res
+        .status(400)
+        .json({ error: error.message || "Failed to send reset email" });
+    }
+    return res.status(200).json({ message: "Password reset email sent" });
+  } catch (err) {
+    console.error("Error in requestPasswordReset:", err);
+    return res
+      .status(500)
+      .json({ error: "Server error during password reset request" });
+  }
+};
+
+// Handle password reset (Supabase handles this via email link, but you can add a placeholder)
+exports.resetPassword = async (req, res) => {
+  return res
+    .status(501)
+    .json({
+      error: "Password reset is handled via email link sent by Supabase.",
+    });
+};
+
+// Send email verification (Supabase sends automatically, but you can trigger resend)
+exports.resendEmailVerification = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+    // Supabase does not have a direct resend endpoint, but you can re-trigger signUp
+    const { data, error } =
+      await require("../models/user.model").default.resendEmailVerification(
+        email
+      );
+    if (error) {
+      return res
+        .status(400)
+        .json({
+          error: error.message || "Failed to resend verification email",
+        });
+    }
+    return res.status(200).json({ message: "Verification email resent" });
+  } catch (err) {
+    console.error("Error in resendEmailVerification:", err);
+    return res
+      .status(500)
+      .json({ error: "Server error during email verification resend" });
+  }
+};
 const UserModel = require("./../models/user.model");
 
 exports.register = async (req, res) => {
