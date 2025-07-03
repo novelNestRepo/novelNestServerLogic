@@ -1,11 +1,11 @@
-require("dotenv").config();
+// require("dotenv").config();
 
 // Debug environment variables
-console.log("Main file - Environment variables:", {
-  url: process.env.SUPABASE_URL,
-  key: process.env.SUPABASE_SERVICE_KEY ? "Key exists" : "Key missing",
-  envPath: process.cwd() + "/.env",
-});
+// console.log("Main file - Environment variables:", {
+//   url: process.env.SUPABASE_URL,
+//   key: process.env.SUPABASE_SERVICE_KEY ? "Key exists" : "Key missing",
+//   envPath: process.cwd() + "/.env",
+// });
 
 const express = require("express");
 const cors = require("cors");
@@ -14,12 +14,10 @@ const { initializeDatabase } = require("./config/init-db");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
 const setupMessageHandlers = require("./socket/messageHandler");
-
+const environment = require("./config/environment")
 // Hardcoded credentials (temporary solution)
-const SUPABASE_URL = "https://rjjdutprvrlrtmjtesfg.supabase.co";
-const SUPABASE_SERVICE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqamR1dHBydnJscnRtandlc2ZnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczOTY5NjQwMCwiZXhwIjoyMDU1MjcyNDAwfQ.2Xw3Yw3Yw3Yw3Yw3Yw3Yw3Yw3Yw3Yw3Yw3Yw3Yw3Yw";
-
+const SUPABASE_URL = environment.SUPABASE_URL; 
+const SUPABASE_SERVICE_KEY =environment.SUPABASE_SERVICE_KEY;
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -69,7 +67,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Something went wrong!" });
 });
 
-const PORT = process.env.PORT || 4000;
+const PORT = environment.PORT || 4000;
 httpServer.listen(PORT, () => {
   console.log(`app is listening on port ${PORT}`);
 });

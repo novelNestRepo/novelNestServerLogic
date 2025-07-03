@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { createClient } = require('@supabase/supabase-js');
+const environment = require('../config/environment')
 
 // Hardcoded credentials (temporary solution)
-const SUPABASE_URL = "https://rjjdutprvrlrtmjtesfg.supabase.co";
-const SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqamR1dHBydnJscnRtandlc2ZnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczOTY5NjQwMCwiZXhwIjoyMDU1MjcyNDAwfQ.2Xw3Yw3Yw3Yw3Yw3Yw3Yw3Yw3Yw3Yw3Yw3Yw3Yw3Yw";
+const SUPABASE_URL = environment.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = environment.SUPABASE_SERVICE_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
   auth: {
