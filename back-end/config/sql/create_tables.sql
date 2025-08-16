@@ -1,4 +1,4 @@
--- Function to create messages table
+-- messages
 CREATE OR REPLACE FUNCTION create_messages_table()
 RETURNS void AS $$
 BEGIN
