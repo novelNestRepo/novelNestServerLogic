@@ -20,7 +20,7 @@ router.post("/register", async (req, res) => {
       options: {
         emailRedirectTo: `${
           process.env.FRONTEND_URL || "http://localhost:3000"
-        }/auth/callback`,
+        }/confirm-email`,
       },
     });
 

@@ -1,4 +1,5 @@
-const supabase = require("../config/supabase");
+const { supabaseAdmin } = require("../config/supabase");
+const supabase = supabaseAdmin;
 
 function setupVoiceHandlers(io) {
   io.on("connection", (socket) => {

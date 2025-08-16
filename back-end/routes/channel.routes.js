@@ -1,17 +1,14 @@
 const express = require("express");
 const router = express.Router();
-const supabase = require("../config/supabase");
+const { supabaseAdmin } = require("../config/supabase");
+const supabase = supabaseAdmin;
 
-// Get all channels with member counts
+// Get all channels
 router.get("/", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("channels")
-      .select(`
-        *,
-        channel_members(count),
-        voice_sessions(count)
-      `);
+      .select("*");
 
     if (error) {
       return res.status(500).json({
@@ -29,26 +26,14 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Get a specific channel with members and voice users
+// Get a specific channel
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
     const { data, error } = await supabase
       .from("channels")
-      .select(`
-        *,
-        channel_members(
-          user_id,
-          role,
-          joined_at
-        ),
-        voice_sessions(
-          user_id,
-          is_muted,
-          joined_at
-        )
-      `)
+      .select("*")
       .eq("id", id)
       .single();
 
@@ -68,18 +53,14 @@ router.get("/:id", async (req, res) => {
 // Create a new channel
 router.post("/", async (req, res) => {
   try {
-    const { name, description, is_private = false, max_users = 10 } = req.body;
-    const created_by = req.user?.id || "00000000-0000-0000-0000-000000000000";
+    const { name, description } = req.body;
 
     const { data, error } = await supabase
       .from("channels")
       .insert([{ 
         name, 
         description, 
-        is_private, 
-        max_users,
-        channel_type: 'voice',
-        created_by 
+        is_private: false
       }])
       .select()
       .single();
@@ -90,15 +71,6 @@ router.post("/", async (req, res) => {
         details: error.message,
       });
     }
-
-    // Add creator as admin
-    await supabase
-      .from("channel_members")
-      .insert([{ 
-        channel_id: data.id, 
-        user_id: created_by, 
-        role: 'admin' 
-      }]);
 
     res.status(201).json(data);
   } catch (error) {
@@ -115,24 +87,9 @@ router.post("/:id/join", async (req, res) => {
     const { id } = req.params;
     const { user_id } = req.body;
 
-    // Check if channel exists and has space
-    const { data: channel } = await supabase
-      .from("channels")
-      .select("max_users, channel_members(count)")
-      .eq("id", id)
-      .single();
-
-    if (!channel) {
-      return res.status(404).json({ error: "Channel not found" });
-    }
-
-    if (channel.channel_members[0].count >= channel.max_users) {
-      return res.status(400).json({ error: "Channel is full" });
-    }
-
     const { data, error } = await supabase
       .from("channel_members")
-      .upsert([{ channel_id: id, user_id, role: 'member' }])
+      .insert([{ channel_id: id, user_id }])
       .select()
       .single();
 
@@ -158,22 +115,15 @@ router.post("/:id/leave", async (req, res) => {
     const { id } = req.params;
     const { user_id } = req.body;
 
-    // Remove from channel members
-    const { error: memberError } = await supabase
+    const { error } = await supabase
       .from("channel_members")
       .delete()
       .match({ channel_id: id, user_id });
 
-    // Remove from voice session if active
-    const { error: voiceError } = await supabase
-      .from("voice_sessions")
-      .delete()
-      .match({ channel_id: id, user_id });
-
-    if (memberError) {
+    if (error) {
       return res.status(500).json({
         error: "Failed to leave channel",
-        details: memberError.message,
+        details: error.message,
       });
     }
 
