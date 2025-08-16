@@ -52,11 +52,14 @@ initializeDatabase()
 
 // Setup Socket.IO handlers
 setupMessageHandlers(io);
+const setupVoiceHandlers = require("./socket/voiceHandler");
+setupVoiceHandlers(io);
 
 // Routes
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/books", require("./routes/books.routes"));
 app.use("/api/channels", require("./routes/channels.routes"));
+app.use("/api/channel", require("./routes/channel.routes"));
 app.use("/api/messages", require("./routes/messages.routes"));
 app.use("/api/relationships", require("./routes/relationships.routes"));
 

@@ -32,6 +32,22 @@ async function initializeDatabase() {
       return;
     }
 
+    const { error: channelMembersError } = await supabaseAdmin.rpc(
+      "create_channel_members_table"
+    );
+    if (channelMembersError) {
+      console.error("Error creating channel_members table:", channelMembersError);
+      return;
+    }
+
+    const { error: voiceSessionsError } = await supabaseAdmin.rpc(
+      "create_voice_sessions_table"
+    );
+    if (voiceSessionsError) {
+      console.error("Error creating voice_sessions table:", voiceSessionsError);
+      return;
+    }
+
     // Check if general channel exists
     const { data: generalChannel, error: generalError } = await supabaseAdmin
       .from("channels")
