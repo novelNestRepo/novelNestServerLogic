@@ -27,7 +27,7 @@ const io = new Server(httpServer, {
   },
 });
 
-// console.log("wtf")
+
 // Initialize Supabase client
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
   auth: {
