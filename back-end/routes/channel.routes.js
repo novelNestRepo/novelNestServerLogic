@@ -2,25 +2,26 @@ const express = require("express");
 const router = express.Router();
 const supabase = require("../config/supabase");
 
-// Get all channels
+// Get all channels with member counts
 router.get("/", async (req, res) => {
   try {
-    console.log("Fetching all channels");
-    const { data, error } = await supabase.from("channels").select("*");
+    const { data, error } = await supabase
+      .from("channels")
+      .select(`
+        *,
+        channel_members(count),
+        voice_sessions(count)
+      `);
 
     if (error) {
-      console.error("Supabase error in GET /:", error);
       return res.status(500).json({
         error: "Failed to fetch channels",
         details: error.message,
-        code: error.code,
       });
     }
 
-    console.log("Found channels:", data);
     res.json(data);
   } catch (error) {
-    console.error("Error in GET /:", error);
     res.status(500).json({
       error: "Failed to fetch channels",
       details: error.message,
@@ -28,36 +29,35 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Get a specific channel
+// Get a specific channel with members and voice users
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("Fetching channel with ID:", id);
 
     const { data, error } = await supabase
       .from("channels")
-      .select("*")
+      .select(`
+        *,
+        channel_members(
+          user_id,
+          role,
+          joined_at
+        ),
+        voice_sessions(
+          user_id,
+          is_muted,
+          joined_at
+        )
+      `)
       .eq("id", id)
       .single();
 
     if (error) {
-      console.error("Supabase error in GET /:id:", error);
-      return res.status(500).json({
-        error: "Failed to fetch channel",
-        details: error.message,
-        code: error.code,
-      });
-    }
-
-    if (!data) {
-      console.log("No channel found with ID:", id);
       return res.status(404).json({ error: "Channel not found" });
     }
 
-    console.log("Found channel:", data);
     res.json(data);
   } catch (error) {
-    console.error("Error in GET /:id:", error);
     res.status(500).json({
       error: "Failed to fetch channel",
       details: error.message,
@@ -68,28 +68,40 @@ router.get("/:id", async (req, res) => {
 // Create a new channel
 router.post("/", async (req, res) => {
   try {
-    const { name, description } = req.body;
-    console.log("Creating channel:", { name, description });
+    const { name, description, is_private = false, max_users = 10 } = req.body;
+    const created_by = req.user?.id || "00000000-0000-0000-0000-000000000000";
 
     const { data, error } = await supabase
       .from("channels")
-      .insert([{ name, description }])
+      .insert([{ 
+        name, 
+        description, 
+        is_private, 
+        max_users,
+        channel_type: 'voice',
+        created_by 
+      }])
       .select()
       .single();
 
     if (error) {
-      console.error("Supabase error in POST /:", error);
       return res.status(500).json({
         error: "Failed to create channel",
         details: error.message,
-        code: error.code,
       });
     }
 
-    console.log("Created channel:", data);
+    // Add creator as admin
+    await supabase
+      .from("channel_members")
+      .insert([{ 
+        channel_id: data.id, 
+        user_id: created_by, 
+        role: 'admin' 
+      }]);
+
     res.status(201).json(data);
   } catch (error) {
-    console.error("Error in POST /:", error);
     res.status(500).json({
       error: "Failed to create channel",
       details: error.message,
@@ -102,27 +114,37 @@ router.post("/:id/join", async (req, res) => {
   try {
     const { id } = req.params;
     const { user_id } = req.body;
-    console.log("Joining channel:", { channelId: id, userId: user_id });
+
+    // Check if channel exists and has space
+    const { data: channel } = await supabase
+      .from("channels")
+      .select("max_users, channel_members(count)")
+      .eq("id", id)
+      .single();
+
+    if (!channel) {
+      return res.status(404).json({ error: "Channel not found" });
+    }
+
+    if (channel.channel_members[0].count >= channel.max_users) {
+      return res.status(400).json({ error: "Channel is full" });
+    }
 
     const { data, error } = await supabase
       .from("channel_members")
-      .insert([{ channel_id: id, user_id }])
+      .upsert([{ channel_id: id, user_id, role: 'member' }])
       .select()
       .single();
 
     if (error) {
-      console.error("Supabase error in POST /:id/join:", error);
       return res.status(500).json({
         error: "Failed to join channel",
         details: error.message,
-        code: error.code,
       });
     }
 
-    console.log("Joined channel:", data);
     res.status(201).json(data);
   } catch (error) {
-    console.error("Error in POST /:id/join:", error);
     res.status(500).json({
       error: "Failed to join channel",
       details: error.message,
@@ -135,26 +157,28 @@ router.post("/:id/leave", async (req, res) => {
   try {
     const { id } = req.params;
     const { user_id } = req.body;
-    console.log("Leaving channel:", { channelId: id, userId: user_id });
 
-    const { error } = await supabase
+    // Remove from channel members
+    const { error: memberError } = await supabase
       .from("channel_members")
       .delete()
       .match({ channel_id: id, user_id });
 
-    if (error) {
-      console.error("Supabase error in POST /:id/leave:", error);
+    // Remove from voice session if active
+    const { error: voiceError } = await supabase
+      .from("voice_sessions")
+      .delete()
+      .match({ channel_id: id, user_id });
+
+    if (memberError) {
       return res.status(500).json({
         error: "Failed to leave channel",
-        details: error.message,
-        code: error.code,
+        details: memberError.message,
       });
     }
 
-    console.log("Left channel successfully");
     res.status(200).json({ message: "Left channel successfully" });
   } catch (error) {
-    console.error("Error in POST /:id/leave:", error);
     res.status(500).json({
       error: "Failed to leave channel",
       details: error.message,
